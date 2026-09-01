@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mizigo Meter - Landlord Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root { --bg-dark:#04060e; --card-bg:rgba(9,15,36,0.6); --neon-purple:#8b5cf6; --neon-blue:#3b82f6; --text-main:#f8fafc; --text-muted:#64748b; --success:#10b981; --danger:#ef4444; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:var(--bg-dark); background-image: radial-gradient(at 0% 0%, rgba(139,92,246,0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(59,130,246,0.15) 0px, transparent 50%); color:var(--text-main); font-family:'Plus Jakarta Sans',sans-serif; min-height:100vh; padding:20px; }
+    .container { max-width:900px; margin:0 auto; }
+    .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; }
+    .brand { font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.4rem; }
+    .brand span { color:var(--neon-blue); }
+    .brand-sub { display:block; font-size:0.6rem; letter-spacing:2px; color:var(--text-muted); font-weight:800; }
+    .btn-logout { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s ease; }
+    .btn-logout:hover { background:rgba(239,68,68,0.2); transform:translateY(-1px); }
+    .nav { display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1px solid rgba(139,92,246,0.2); border-radius:16px; padding:16px 24px; margin-bottom:30px; backdrop-filter:blur(20px); }
+    .nav-brand { font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.2rem; }
+    .nav-brand span { color:var(--neon-blue); }
+    .nav-actions { display:flex; align-items:center; gap:16px; }
+    .nav-notification { position:relative; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); color:var(--text-main); width:40px; height:40px; border-radius:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transition:all 0.2s ease; }
+    .nav-notification:hover { border-color:var(--neon-blue); color:var(--neon-blue); }
+    .nav-notification .badge { position:absolute; top:-4px; right:-4px; background:var(--neon-blue); color:white; font-size:0.65rem; font-weight:800; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid var(--bg-dark); }
+    .notification-panel { position:relative; }
+    .notification-dropdown { display:none; position:absolute; top:calc(100% + 12px); right:0; width:360px; background:rgba(9,15,36,0.98); border:1px solid rgba(139,92,246,0.4); border-radius:20px; padding:20px; backdrop-filter:blur(20px); box-shadow:0 25px 50px rgba(0,0,0,0.6); z-index:9999; }
+    .notification-dropdown.active { display:block; }
+    .notification-dropdown-header { font-size:0.9rem; font-weight:800; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; color:var(--text-main); }
+    .notification-dropdown-header button { background:none; border:none; color:var(--neon-blue); font-size:0.8rem; font-weight:700; cursor:pointer; }
+    .notification-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.08); }
+    .notification-item:last-child { border-bottom:none; }
+    .notification-item .icon { width:36px; height:36px; border-radius:12px; background:rgba(139,92,246,0.2); color:var(--neon-purple); display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+    .notification-item .text { flex:1; }
+    .notification-item .title { font-size:0.85rem; font-weight:700; color:var(--text-main); }
+    .notification-item .desc { font-size:0.8rem; color:var(--text-muted); margin-top:3px; line-height:1.4; }
+    .notification-item .time { font-size:0.75rem; color:var(--text-muted); white-space:nowrap; font-weight:600; }
+    #notif-list { max-height:320px; overflow-y:auto; padding-right:4px; }
+    #notif-list::-webkit-scrollbar { width:6px; }
+    #notif-list::-webkit-scrollbar-track { background:transparent; }
+    #notif-list::-webkit-scrollbar-thumb { background:rgba(139,92,246,0.3); border-radius:3px; }
+    #notif-list::-webkit-scrollbar-thumb:hover { background:rgba(139,92,246,0.5); }
+    .notification-item.read { opacity:0.5; }
+    .notification-item.read .icon { background:rgba(100,116,139,0.15); color:var(--text-muted); }
+    .theme-toggle { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); color:var(--text-main); width:40px; height:40px; border-radius:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transition:all 0.2s ease; }
+    .theme-toggle:hover { border-color:var(--neon-cyan); color:var(--neon-cyan); }
+    .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; }
+    .card { background:var(--card-bg); border:1px solid rgba(139,92,246,0.2); border-radius:20px; padding:30px; margin-bottom:24px; backdrop-filter:blur(20px); }
+    .card-title { font-size:1.1rem; font-weight:800; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+    .card-title i { color:var(--neon-blue); }
+    .form-group { margin-bottom:18px; }
+    .form-label { display:block; font-size:0.8rem; font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:1px; }
+    .form-input, .form-select { width:100%; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px 16px; color:var(--text-main); font-family:inherit; font-size:0.95rem; }
+    .form-input:focus, .form-select:focus { outline:none; border-color:var(--neon-purple); box-shadow:0 0 15px rgba(139,92,246,0.25); }
+    .form-select option { background:#0f172a; color:var(--text-main); }
+    .btn-primary { width:100%; background:linear-gradient(90deg,var(--neon-purple),var(--neon-blue)); border:none; border-radius:12px; color:white; padding:15px; font-size:1rem; font-weight:800; cursor:pointer; }
+    .btn-primary:hover { box-shadow:0 0 25px rgba(139,92,246,0.45); }
+    .btn-primary:disabled { opacity:0.6; cursor:not-allowed; }
+    .error-alert { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; padding:12px 16px; border-radius:12px; font-size:0.85rem; margin-bottom:20px; display:none; }
+    .success-alert { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); color:#34d399; padding:12px 16px; border-radius:12px; font-size:0.85rem; margin-bottom:20px; display:none; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { text-align:left; padding:14px 12px; border-bottom:1px solid rgba(255,255,255,0.05); }
+    th { font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); font-weight:700; }
+    td { font-size:0.9rem; }
+    .badge { display:inline-block; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:700; }
+    .badge-occupied { background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); }
+    .badge-vacant { background:rgba(100,116,139,0.15); color:var(--text-muted); border:1px solid rgba(100,116,139,0.3); }
+    .empty-state { text-align:center; padding:40px 20px; color:var(--text-muted); }
+    .empty-state i { font-size:2rem; margin-bottom:10px; display:block; opacity:0.5; }
+    .notif-empty { text-align:center; padding:2rem 0; color:var(--text-muted); font-size:0.85rem; }
+    .notif-empty i { font-size:1.5rem; margin-bottom:0.5rem; display:block; opacity:0.5; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    @media (max-width: 700px) { .grid-2 { grid-template-columns:1fr; } .header { flex-direction:column; gap:15px; align-items:flex-start; } }
+    .light-theme { --bg-dark:#f8fafc; --card-bg:rgba(255,255,255,0.85); --text-main:#0f172a; --text-muted:#64748b; }
+    .light-theme body { background:#f8fafc; }
+    .light-theme .notification-dropdown { background:rgba(255,255,255,0.98); border-color:rgba(0,0,0,0.08); box-shadow:0 25px 50px rgba(0,0,0,0.15); }
+    .light-theme .notification-item { border-bottom-color:rgba(0,0,0,0.06); }
+    .light-theme .notification-item .title { color:#0f172a; }
+    .light-theme .notification-item .desc { color:#64748b; }
+    .light-theme .notification-item .time { color:#94a3b8; }
+    .light-theme .nav { background:rgba(255,255,255,0.9); border-color:rgba(0,0,0,0.06); }
+    .light-theme .card { background:rgba(255,255,255,0.85); border-color:rgba(0,0,0,0.06); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="nav-brand">MIZIGO<span>METER</span></div>
+      <div class="nav-actions">
+        <div class="notification-panel">
+          <button class="nav-notification" id="notif-btn" title="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="badge">3</span>
+          </button>
+          <div class="notification-dropdown" id="notif-dropdown">
+            <div class="notification-dropdown-header">
+              Notifications
+              <button id="notif-close">Mark all as read</button>
+            </div>
+            <div id="notif-list"></div>
+            <div class="notif-empty" id="notif-empty" style="display:none;">
+              <i class="fas fa-bell-slash"></i>
+              <div>No notifications yet</div>
+            </div>
+          </div>
+        </div>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+          <i class="fas fa-moon" id="theme-icon"></i>
+        </button>
+        <a href="/login.html" id="logout-btn" class="btn-logout" title="Sign out of your account">
+          <i class="fas fa-arrow-right-from-bracket"></i> Sign Out
+        </a>
+      </div>
+    </div>
+
+    <div class="error-alert" id="error-alert"></div>
+    <div class="success-alert" id="success-alert"></div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><i class="fas fa-user-plus"></i> Add New Tenant</div>
+        <form id="add-tenant-form">
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input class="form-input" type="text" id="username" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" id="password" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Assign Room</label>
+            <select class="form-select" id="room_id" required>
+              <option value="">Select a room...</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-primary">Register Tenant</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fas fa-door-open"></i> My Rooms</div>
+        <div id="rooms-loading" style="text-align:center;padding:20px;color:var(--text-muted);">Loading rooms...</div>
+        <div id="rooms-empty" class="empty-state" style="display:none;">
+          <i class="fas fa-inbox"></i>
+          <div>No rooms found.</div>
+        </div>
+        <table id="rooms-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>Room</th>
+              <th>Tenant</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="rooms-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const errorAlert = document.getElementById('error-alert');
+    const successAlert = document.getElementById('success-alert');
+    const roomSelect = document.getElementById('room_id');
+    const roomsTable = document.getElementById('rooms-table');
+    const roomsTbody = document.getElementById('rooms-tbody');
+    const roomsLoading = document.getElementById('rooms-loading');
+    const roomsEmpty = document.getElementById('rooms-empty');
+
+    function showError(msg) {
+      errorAlert.textContent = msg;
+      errorAlert.style.display = 'block';
+      successAlert.style.display = 'none';
+    }
+    function showSuccess(msg) {
+      successAlert.textContent = msg;
+      successAlert.style.display = 'block';
+      errorAlert.style.display = 'none';
+    }
+
+    async function loadRooms() {
+      try {
+        const res = await fetch('/api/landlord/dashboard');
+        const data = await res.json();
+        if (!res.ok) {
+          showError(data.error || 'Failed to load rooms.');
+          return;
+        }
+        renderRooms(data.rooms || []);
+      } catch (err) {
+        showError('Network error. Please try again.');
+      }
+    }
+
+    function renderRooms(rooms) {
+      roomSelect.innerHTML = '<option value="">Select a room...</option>';
+      roomsTbody.innerHTML = '';
+
+      if (rooms.length === 0) {
+        roomsLoading.style.display = 'none';
+        roomsEmpty.style.display = 'block';
+        return;
+      }
+
+      roomsLoading.style.display = 'none';
+      roomsTable.style.display = 'table';
+      roomsEmpty.style.display = 'none';
+
+      rooms.forEach(room => {
+        const option = document.createElement('option');
+        option.value = room.room_id;
+        option.textContent = room.room_name;
+        if (room.tenant) {
+          option.disabled = true;
+          option.textContent = `${room.room_name} (Occupied)`;
+        }
+        roomSelect.appendChild(option);
+
+        const tr = document.createElement('tr');
+        const statusBadge = room.tenant
+          ? '<span class="badge badge-occupied">Occupied</span>'
+          : '<span class="badge badge-vacant">Vacant</span>';
+        tr.innerHTML = `
+          <td>${escapeHtml(room.room_name)}</td>
+          <td>${room.tenant ? escapeHtml(room.tenant.username) : '-'}</td>
+          <td>${statusBadge}</td>
+        `;
+        roomsTbody.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    document.getElementById('add-tenant-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const roomId = document.getElementById('room_id').value;
+
+      if (!username || !password || !roomId) {
+        showError('All fields are required.');
+        return;
+      }
+
+      const btn = e.target.querySelector('button');
+      btn.disabled = true;
+      btn.textContent = 'Registering...';
+
+      try {
+        const res = await fetch('/api/landlord/add-tenant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, room_id: roomId }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showError(data.error || 'Failed to add tenant.');
+          return;
+        }
+        showSuccess(data.message || 'Tenant added successfully.');
+        document.getElementById('add-tenant-form').reset();
+        loadRooms();
+      } catch (err) {
+        showError('Network error. Please try again.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Register Tenant';
+      }
+    });
+
+    loadRooms();
+
+    const notifBtn = document.getElementById('notif-btn');
+    const notifDropdown = document.getElementById('notif-dropdown');
+    const notifClose = document.getElementById('notif-close');
+    const notifList = document.getElementById('notif-list');
+
+    let notifications = [];
+
+    function timeAgo(dateStr) {
+      const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+      if (seconds < 60) return 'Just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return minutes + 'm';
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return hours + 'h';
+      const days = Math.floor(hours / 24);
+      return days + 'd';
+    }
+
+    const typeIconMap = {
+      payment: 'fa-circle-check',
+      low_balance: 'fa-triangle-exclamation',
+      system: 'fa-wrench',
+      tenant_added: 'fa-user-plus',
+      landlord_added: 'fa-user-plus',
+      sensor_disconnect: 'fa-triangle-exclamation',
+      power_cut: 'fa-power-off',
+      power_restore: 'fa-bolt',
+    };
+
+    function mapNotification(n) {
+      return {
+        title: n.title,
+        desc: n.message,
+        time: timeAgo(n.created_at),
+        icon: typeIconMap[n.type] || 'fa-bell',
+        read: n.read,
+        id: n.id,
+      };
+    }
+
+    async function loadNotifications() {
+      try {
+        const res = await fetch('/api/notifications');
+        const data = await res.json();
+        if (!res.ok) {
+          console.error('Failed to load notifications', data.error);
+          return;
+        }
+        notifications = (data.notifications || []).map(mapNotification);
+        renderNotifications();
+      } catch (err) {
+        console.error('Failed to load notifications', err);
+      }
+    }
+
+    function renderNotifications() {
+      const notifEmpty = document.getElementById('notif-empty');
+      if (notifications.length === 0) {
+        notifList.innerHTML = '';
+        notifEmpty.style.display = 'block';
+      } else {
+        notifEmpty.style.display = 'none';
+        notifList.innerHTML = notifications.map((n) => `
+          <div class="notification-item${n.read ? ' read' : ''}" data-id="${n.id}">
+            <div class="icon"><i class="fas ${n.icon}"></i></div>
+            <div class="text">
+              <div class="title">${n.title}</div>
+              <div class="desc">${n.desc}</div>
+            </div>
+            <div class="time">${n.time}</div>
+          </div>
+        `).join('');
+      }
+
+      const unreadCount = notifications.filter(n => !n.read).length;
+      const badge = document.querySelector('#notif-btn .badge');
+      badge.textContent = unreadCount;
+      badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+    }
+
+    notifBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      notifDropdown.classList.toggle('active');
+    });
+
+    notifClose.addEventListener('click', async () => {
+      await fetch('/api/notifications?action=read-all', { method: 'POST' });
+      notifications.forEach(n => n.read = true);
+      renderNotifications();
+      notifDropdown.classList.remove('active');
+    });
+
+    notifList.addEventListener('click', async (e) => {
+      const item = e.target.closest('.notification-item');
+      if (item) {
+        const id = parseInt(item.dataset.id, 10);
+        if (!isNaN(id)) {
+          await fetch(`/api/notifications?id=${id}&action=mark-read`, { method: 'POST' });
+          const n = notifications.find(x => x.id === id);
+          if (n) n.read = true;
+          renderNotifications();
+        }
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!notifDropdown.contains(e.target) && e.target !== notifBtn) {
+        notifDropdown.classList.remove('active');
+      }
+    });
+
+    loadNotifications();
+    setInterval(loadNotifications, 10000);
+
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const body = document.body;
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+
+    function applyTheme(theme) {
+      if (theme === 'light') {
+        body.classList.add('light-theme');
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+      } else {
+        body.classList.remove('light-theme');
+        themeIcon.classList.replace('fa-sun', 'fa-moon');
+      }
+      localStorage.setItem('theme', theme);
+    }
+
+    applyTheme(savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const current = localStorage.getItem('theme') || 'dark';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      await fetch('/api/logout', { method: 'POST' });
+      window.location.href = '/login.html';
+    });
+  </script>
+</body>
+</html>
